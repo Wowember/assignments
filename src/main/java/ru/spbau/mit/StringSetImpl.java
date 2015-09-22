@@ -106,15 +106,19 @@ public class StringSetImpl implements StreamSerializable, StringSet{
 
     private void recSerialize(Vertex now, OutputStream out)throws IOException {
         out.write(intToByte(now.countWithSamePrefix));
-        if (now.isTerminate)
+        if (now.isTerminate) {
             out.write(intToByte(1));
-        else
+        }
+        else {
             out.write(intToByte(0));
+        }
         for (int i = 0; i < 52; i++)
-            if (now.next[i] == null)
+            if (now.next[i] == null) {
                 out.write(intToByte(0));
-            else
+            }
+            else {
                 out.write(intToByte(1));
+            }
         for (int i = 0; i < 52; i++)
             if (now.next[i] != null)
                 recSerialize(now.next[i], out);
@@ -130,8 +134,7 @@ public class StringSetImpl implements StreamSerializable, StringSet{
     }
 
     private int getInt(int pos, byte[] ar){
-        //System.err.println(((ar[pos * 4 + 3] & 0xFF) << 24) | (ar[pos * 4 + 2] & 0xFF) << 16 | ((ar[pos * 4 + 1] & 0xFF) << 8) | (ar[pos * 4] & 0xFF));
-        return ((ar[pos * 4 + 3] & 0xFF) << 24) | (ar[pos * 4 + 2] & 0xFF) << 16 | ((ar[pos * 4 + 1] & 0xFF) << 8) | (ar[pos * 4] & 0xFF);
+        return ((ar[pos * 4 + 3] << 24) & 0xFF000000 | ((ar[pos * 4 + 2] << 16)& 0xFF0000) | ((ar[pos * 4 + 1] << 8) & 0xFF00) | (ar[pos * 4] & 0xFF));
     }
 
     private void recDeserialize(Vertex now, InputStream in) throws IOException {
@@ -143,7 +146,7 @@ public class StringSetImpl implements StreamSerializable, StringSet{
             now.isTerminate = true;
         for (int i = 2; i < 54; i++){
             if (getInt(i, buffer) > 0)
-                now.next[i] = new Vertex();
+                now.next[i - 2] = new Vertex();
         }
         for (int i = 0; i < 52; i++)
             if (now.next[i] != null)
