@@ -67,9 +67,7 @@ public class StringSetImpl implements StreamSerializable, StringSet{
 
     public boolean contains(String element){
         Vertex now = containsSubstring(element);
-        if(now == null)
-            return false;
-        return now.isTerminate;
+        return now != null && now.isTerminate;
      }
 
     public boolean remove(String element){
@@ -95,9 +93,7 @@ public class StringSetImpl implements StreamSerializable, StringSet{
 
     public int howManyStartsWithPrefix(String prefix){
         Vertex now = containsSubstring(prefix);
-        if (now == null)
-            return 0;
-        return now.countWithSamePrefix;
+        return (now == null ? 0 : now.countWithSamePrefix);
     }
 
     private byte[] intToByte(int a){
