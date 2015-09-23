@@ -77,11 +77,12 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         now.countWithSamePrefix--;
         for (int i = 0; i < element.length(); i++) {
             int ind = getNumber(element.charAt(i));
-            Vertex tmp = now;
+            if (now.next[ind].countWithSamePrefix == 1){
+                now.next[ind] = null;
+                return true;
+            }
             now = now.next[ind];
             now.countWithSamePrefix--;
-            if (now.countWithSamePrefix == 0)
-                tmp.next[ind] = null;
         }
         now.isTerminate = false;
         return true;
