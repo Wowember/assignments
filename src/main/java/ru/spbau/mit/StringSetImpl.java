@@ -10,15 +10,17 @@ import java.io.OutputStream;
 
 public class StringSetImpl implements StreamSerializable, StringSet{
 
-    private class Vertex{
+    private final static int ALPHABET_SIZE = 52;
+
+    private static class Vertex{
 
         private int countWithSamePrefix;
         private Vertex[] next;
         private boolean isTerminate;
 
-        public Vertex(){
+        private Vertex(){
             countWithSamePrefix = 0;
-            next = new Vertex[52];
+            next = new Vertex[ALPHABET_SIZE];
             isTerminate = false;
         }
     }
@@ -33,7 +35,7 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         if (Character.isUpperCase(ch))
             return (ch - 'A');
         else
-            return 26 + (ch - 'a');
+            return ALPHABET_SIZE / 2 + (ch - 'a');
     }
 
     public boolean add(String element){
@@ -51,6 +53,7 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         now.isTerminate = true;
         return true;
     }
+
 
     public boolean contains(String element){
         Vertex now = root;
@@ -70,9 +73,9 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         now.countWithSamePrefix--;
         for (int i = 0; i < element.length(); i++) {
             int ind = getNumber(element.charAt(i));
-            now.next[ind].countWithSamePrefix--;
             Vertex tmp = now;
             now = now.next[ind];
+            now.countWithSamePrefix--;
             if (now.countWithSamePrefix == 0)
                 tmp.next[ind] = null;
         }
@@ -106,20 +109,16 @@ public class StringSetImpl implements StreamSerializable, StringSet{
 
     private void recSerialize(Vertex now, OutputStream out)throws IOException {
         out.write(intToByte(now.countWithSamePrefix));
-        if (now.isTerminate) {
+        if (now.isTerminate)
             out.write(intToByte(1));
-        }
-        else {
+        else
             out.write(intToByte(0));
-        }
-        for (int i = 0; i < 52; i++)
-            if (now.next[i] == null) {
+        for (int i = 0; i < ALPHABET_SIZE; i++)
+            if (now.next[i] == null)
                 out.write(intToByte(0));
-            }
-            else {
+            else
                 out.write(intToByte(1));
-            }
-        for (int i = 0; i < 52; i++)
+        for (int i = 0; i < ALPHABET_SIZE; i++)
             if (now.next[i] != null)
                 recSerialize(now.next[i], out);
     }
@@ -133,22 +132,23 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         }
     }
 
-    private int getInt(int pos, byte[] ar){
-        return ((ar[pos * 4 + 3] << 24) & 0xFF000000 | ((ar[pos * 4 + 2] << 16)& 0xFF0000) | ((ar[pos * 4 + 1] << 8) & 0xFF00) | (ar[pos * 4] & 0xFF));
+    private int getInt(byte[] ar){
+        return ((ar[3] << 24) & 0xFF000000 | ((ar[2] << 16)& 0xFF0000) | ((ar[1] << 8) & 0xFF00) | (ar[0] & 0xFF));
     }
 
     private void recDeserialize(Vertex now, InputStream in) throws IOException {
-        byte[] buffer = new byte[54*4];
-        if (in.read(buffer) != 54*4)
-            return;
-        now.countWithSamePrefix = getInt(0, buffer);
-        if (getInt(1, buffer) == 1)
+        byte[] buffer = new byte[4];
+        in.read(buffer);
+        now.countWithSamePrefix = getInt(buffer);
+        in.read(buffer);
+        if (getInt(buffer) == 1)
             now.isTerminate = true;
-        for (int i = 2; i < 54; i++){
-            if (getInt(i, buffer) > 0)
-                now.next[i - 2] = new Vertex();
+        for (int i = 0; i < ALPHABET_SIZE; i++){
+            in.read(buffer);
+            if (getInt(buffer) > 0)
+                now.next[i] = new Vertex();
         }
-        for (int i = 0; i < 52; i++)
+        for (int i = 0; i < ALPHABET_SIZE; i++)
             if (now.next[i] != null)
                 recDeserialize(now.next[i], in);
     }
