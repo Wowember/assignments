@@ -54,17 +54,21 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         return true;
     }
 
-
-    public boolean contains(String element){
+    private Vertex containsSubstring(String subStr){
         Vertex now = root;
-        for (int i = 0; i < element.length(); i++){
-            int ind = getNumber(element.charAt(i));
+        for (int i = 0; i < subStr.length(); i++){
+            int ind = getNumber(subStr.charAt(i));
             if (now.next[ind] == null)
-                return false;
+                return null;
             now = now.next[ind];
         }
-        return now.isTerminate;
-     }
+        return now;
+    }
+
+    public boolean contains(String element){
+        Vertex now = containsSubstring(element);
+        return now != null && now.isTerminate;
+    }
 
     public boolean remove(String element){
         if (!contains(element))
@@ -73,11 +77,12 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         now.countWithSamePrefix--;
         for (int i = 0; i < element.length(); i++) {
             int ind = getNumber(element.charAt(i));
-            Vertex tmp = now;
+            if (now.next[ind].countWithSamePrefix == 1){
+                now.next[i] = null;
+                return true;
+            }
             now = now.next[ind];
             now.countWithSamePrefix--;
-            if (now.countWithSamePrefix == 0)
-                tmp.next[ind] = null;
         }
         now.isTerminate = false;
         return true;
@@ -88,14 +93,8 @@ public class StringSetImpl implements StreamSerializable, StringSet{
     }
 
     public int howManyStartsWithPrefix(String prefix){
-        Vertex now = root;
-        for (int i = 0; i < prefix.length(); i++){
-            int ind = getNumber(prefix.charAt(i));
-            if (now.next[ind] == null)
-                return 0;
-            now = now.next[ind];
-        }
-        return now.countWithSamePrefix;
+        Vertex now = containsSubstring(prefix);
+        return (now == null ? 0 : now.countWithSamePrefix);
     }
 
     private byte[] intToByte(int a){
@@ -109,15 +108,9 @@ public class StringSetImpl implements StreamSerializable, StringSet{
 
     private void recSerialize(Vertex now, OutputStream out)throws IOException {
         out.write(intToByte(now.countWithSamePrefix));
-        if (now.isTerminate)
-            out.write(intToByte(1));
-        else
-            out.write(intToByte(0));
+        out.write(intToByte(now.isTerminate ? 1 : 0));
         for (int i = 0; i < ALPHABET_SIZE; i++)
-            if (now.next[i] == null)
-                out.write(intToByte(0));
-            else
-                out.write(intToByte(1));
+            out.write(intToByte(now.next[i] == null ? 0 : 1));
         for (int i = 0; i < ALPHABET_SIZE; i++)
             if (now.next[i] != null)
                 recSerialize(now.next[i], out);
@@ -141,11 +134,10 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         in.read(buffer);
         now.countWithSamePrefix = getInt(buffer);
         in.read(buffer);
-        if (getInt(buffer) == 1)
-            now.isTerminate = true;
+        now.isTerminate = (getInt(buffer) == 1);
         for (int i = 0; i < ALPHABET_SIZE; i++){
             in.read(buffer);
-            if (getInt(buffer) > 0)
+            if (getInt(buffer) == 1)
                 now.next[i] = new Vertex();
         }
         for (int i = 0; i < ALPHABET_SIZE; i++)
