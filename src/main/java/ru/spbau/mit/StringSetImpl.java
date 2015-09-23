@@ -67,8 +67,10 @@ public class StringSetImpl implements StreamSerializable, StringSet{
 
     public boolean contains(String element){
         Vertex now = containsSubstring(element);
-        return now != null && now.isTerminate;
-    }
+        if(now == null)
+            return false;
+        return now.isTerminate;
+     }
 
     public boolean remove(String element){
         if (!contains(element))
@@ -77,12 +79,11 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         now.countWithSamePrefix--;
         for (int i = 0; i < element.length(); i++) {
             int ind = getNumber(element.charAt(i));
-            if (now.next[ind].countWithSamePrefix == 1){
-                now.next[i] = null;
-                return true;
-            }
+            Vertex tmp = now;
             now = now.next[ind];
             now.countWithSamePrefix--;
+            if (now.countWithSamePrefix == 0)
+                tmp.next[ind] = null;
         }
         now.isTerminate = false;
         return true;
@@ -94,7 +95,9 @@ public class StringSetImpl implements StreamSerializable, StringSet{
 
     public int howManyStartsWithPrefix(String prefix){
         Vertex now = containsSubstring(prefix);
-        return (now == null ? 0 : now.countWithSamePrefix);
+        if (now == null)
+            return 0;
+        return now.countWithSamePrefix;
     }
 
     private byte[] intToByte(int a){
