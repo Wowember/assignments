@@ -3,6 +3,7 @@ package ru.spbau.mit;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.BitSet;
 
 /**
  * Created by Wowember on 22.09.2015.
@@ -13,40 +14,33 @@ public class StringSetImpl implements StreamSerializable, StringSet{
     private final static int ALPHABET_SIZE = 52;
 
     private static class Vertex{
+        private int countWithSamePrefix = 0;
+        private Vertex[] next = new Vertex[ALPHABET_SIZE];
+        private boolean isTerminate = false;
+    }
 
-        private int countWithSamePrefix;
-        private Vertex[] next;
-        private boolean isTerminate;
+    private Vertex root = new Vertex();
 
-        private Vertex(){
-            countWithSamePrefix = 0;
-            next = new Vertex[ALPHABET_SIZE];
-            isTerminate = false;
+    private int getNumber(char ch){
+        if (Character.isUpperCase(ch)){
+            return (ch - 'A');
+        }
+        else{
+            return ALPHABET_SIZE / 2 + (ch - 'a');
         }
     }
 
-    private Vertex root;
-
-    public StringSetImpl(){
-        root = new Vertex();
-    }
-
-    private int getNumber(char ch){
-        if (Character.isUpperCase(ch))
-            return (ch - 'A');
-        else
-            return ALPHABET_SIZE / 2 + (ch - 'a');
-    }
-
     public boolean add(String element){
-        if(contains(element))
+        if(contains(element)){
             return false;
+        }
         Vertex now = root;
         now.countWithSamePrefix++;
-        for (int i = 0; i < element.length(); i++){
-            int ind = getNumber(element.charAt(i));
-            if (now.next[ind] == null)
+        for (char c: element.toCharArray()){
+            int ind = getNumber(c);
+            if (now.next[ind] == null){
                 now.next[ind] = new Vertex();
+            }
             now = now.next[ind];
             now.countWithSamePrefix++;
         }
@@ -56,10 +50,11 @@ public class StringSetImpl implements StreamSerializable, StringSet{
 
     private Vertex containsSubstring(String subStr){
         Vertex now = root;
-        for (int i = 0; i < subStr.length(); i++){
-            int ind = getNumber(subStr.charAt(i));
-            if (now.next[ind] == null)
+        for (char c: subStr.toCharArray()){
+            int ind = getNumber(c);
+            if (now.next[ind] == null){
                 return null;
+            }
             now = now.next[ind];
         }
         return now;
@@ -71,12 +66,13 @@ public class StringSetImpl implements StreamSerializable, StringSet{
      }
 
     public boolean remove(String element){
-        if (!contains(element))
+        if (!contains(element)){
             return false;
+        }
         Vertex now = root;
         now.countWithSamePrefix--;
-        for (int i = 0; i < element.length(); i++) {
-            int ind = getNumber(element.charAt(i));
+        for (char c: element.toCharArray()){
+            int ind = getNumber(c);
             if (now.next[ind].countWithSamePrefix == 1){
                 now.next[ind] = null;
                 return true;
@@ -97,27 +93,32 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         return (now == null ? 0 : now.countWithSamePrefix);
     }
 
-    private byte[] intToByte(int a){
-        byte[] tmp = new byte[4];
-        tmp[0] = (byte) a;
-        tmp[1] = (byte) (a>>8);
-        tmp[2] = (byte) (a>>16);
-        tmp[3] = (byte) (a>>24);
-        return tmp;
+    private byte[] bitSetToByte(BitSet bits){
+        byte[] bytes = new byte[ALPHABET_SIZE / 8 + 1];
+        for (int i = 0; i < bits.length(); i++){
+            if (bits.get(i)){
+                bytes[i / 8] |= (byte) (1 << (i % 8));
+            }
+        }
+        return bytes;
     }
 
-    private void recSerialize(Vertex now, OutputStream out)throws IOException {
-        out.write(intToByte(now.countWithSamePrefix));
-        out.write(intToByte(now.isTerminate ? 1 : 0));
-        for (int i = 0; i < ALPHABET_SIZE; i++)
-            out.write(intToByte(now.next[i] == null ? 0 : 1));
-        for (int i = 0; i < ALPHABET_SIZE; i++)
-            if (now.next[i] != null)
+    private void recSerialize(Vertex now, OutputStream out)throws IOException{
+        BitSet bits = new BitSet(ALPHABET_SIZE + 1);
+        for (int i = 0; i < ALPHABET_SIZE; i++){
+            bits.set(i, now.next[i] != null);
+        }
+        bits.set(ALPHABET_SIZE, now.isTerminate);
+        out.write(bitSetToByte(bits));
+        for (int i = 0; i < ALPHABET_SIZE; i++){
+            if (now.next[i] != null){
                 recSerialize(now.next[i], out);
+            }
+        }
     }
 
-    public void serialize(OutputStream out) {
-        try {
+    public void serialize(OutputStream out){
+        try{
             recSerialize(root, out);
         }
         catch (IOException ex){
@@ -125,28 +126,26 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         }
     }
 
-    private int getInt(byte[] ar){
-        return ((ar[3] << 24) & 0xFF000000 | ((ar[2] << 16)& 0xFF0000) | ((ar[1] << 8) & 0xFF00) | (ar[0] & 0xFF));
-    }
-
-    private void recDeserialize(Vertex now, InputStream in) throws IOException {
-        byte[] buffer = new byte[4];
+    private void recDeserialize(Vertex now, InputStream in) throws IOException{
+        byte[] buffer = new byte[ALPHABET_SIZE / 8 + 1];
         in.read(buffer);
-        now.countWithSamePrefix = getInt(buffer);
-        in.read(buffer);
-        now.isTerminate = (getInt(buffer) == 1);
         for (int i = 0; i < ALPHABET_SIZE; i++){
-            in.read(buffer);
-            if (getInt(buffer) == 1)
+            if (((buffer[i / 8] >> (i % 8)) & 1) == 1){
                 now.next[i] = new Vertex();
+            }
         }
-        for (int i = 0; i < ALPHABET_SIZE; i++)
-            if (now.next[i] != null)
+        now.isTerminate = ((buffer[ALPHABET_SIZE / 8] >> (ALPHABET_SIZE % 8)) & 1) == 1;
+        now.countWithSamePrefix += now.isTerminate ? 1 : 0;
+        for (int i = 0; i < ALPHABET_SIZE; i++){
+            if (now.next[i] != null){
                 recDeserialize(now.next[i], in);
+                now.countWithSamePrefix += now.next[i].countWithSamePrefix;
+            }
+        }
     }
 
     public void deserialize(InputStream in){
-        try {
+        try{
             root = new Vertex();
             recDeserialize(root, in);
         }
