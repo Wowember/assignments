@@ -31,7 +31,7 @@ public class StringSetImpl implements StreamSerializable, StringSet{
     }
 
     public boolean add(String element){
-        if(contains(element)){
+        if (contains(element)){
             return false;
         }
         Vertex now = root;
@@ -129,15 +129,11 @@ public class StringSetImpl implements StreamSerializable, StringSet{
     private void recDeserialize(Vertex now, InputStream in) throws IOException{
         byte[] buffer = new byte[ALPHABET_SIZE / 8 + 1];
         in.read(buffer);
-        for (int i = 0; i < ALPHABET_SIZE; i++){
-            if (((buffer[i / 8] >> (i % 8)) & 1) == 1){
-                now.next[i] = new Vertex();
-            }
-        }
         now.isTerminate = ((buffer[ALPHABET_SIZE / 8] >> (ALPHABET_SIZE % 8)) & 1) == 1;
         now.countWithSamePrefix += now.isTerminate ? 1 : 0;
         for (int i = 0; i < ALPHABET_SIZE; i++){
-            if (now.next[i] != null){
+            if (((buffer[i / 8] >> (i % 8)) & 1) == 1){
+                now.next[i] = new Vertex();
                 recDeserialize(now.next[i], in);
                 now.countWithSamePrefix += now.next[i].countWithSamePrefix;
             }
