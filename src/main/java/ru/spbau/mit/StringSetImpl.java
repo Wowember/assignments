@@ -93,23 +93,14 @@ public class StringSetImpl implements StreamSerializable, StringSet{
         return (now == null ? 0 : now.countWithSamePrefix);
     }
 
-    private byte[] bitSetToByte(BitSet bits){
-        byte[] bytes = new byte[ALPHABET_SIZE / 8 + 1];
-        for (int i = 0; i < bits.length(); i++){
-            if (bits.get(i)){
-                bytes[i / 8] |= (byte) (1 << (i % 8));
-            }
-        }
-        return bytes;
-    }
-
     private void recSerialize(Vertex now, OutputStream out)throws IOException{
-        BitSet bits = new BitSet(ALPHABET_SIZE + 1);
-        for (int i = 0; i < ALPHABET_SIZE; i++){
+        BitSet bits = new BitSet(ALPHABET_SIZE + 2);
+        for (int i = 0; i < ALPHABET_SIZE; i++) {
             bits.set(i, now.next[i] != null);
         }
         bits.set(ALPHABET_SIZE, now.isTerminate);
-        out.write(bitSetToByte(bits));
+        bits.set(ALPHABET_SIZE + 1, true);
+        out.write(bits.toByteArray());
         for (int i = 0; i < ALPHABET_SIZE; i++){
             if (now.next[i] != null){
                 recSerialize(now.next[i], out);
@@ -129,10 +120,11 @@ public class StringSetImpl implements StreamSerializable, StringSet{
     private void recDeserialize(Vertex now, InputStream in) throws IOException{
         byte[] buffer = new byte[ALPHABET_SIZE / 8 + 1];
         in.read(buffer);
-        now.isTerminate = ((buffer[ALPHABET_SIZE / 8] >> (ALPHABET_SIZE % 8)) & 1) == 1;
+        BitSet bits = BitSet.valueOf(buffer);
+        now.isTerminate = bits.get(ALPHABET_SIZE);
         now.countWithSamePrefix += now.isTerminate ? 1 : 0;
         for (int i = 0; i < ALPHABET_SIZE; i++){
-            if (((buffer[i / 8] >> (i % 8)) & 1) == 1){
+            if (bits.get(i)){
                 now.next[i] = new Vertex();
                 recDeserialize(now.next[i], in);
                 now.countWithSamePrefix += now.next[i].countWithSamePrefix;
