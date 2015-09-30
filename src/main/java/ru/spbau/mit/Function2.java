@@ -3,6 +3,7 @@ package ru.spbau.mit;
 /**
  * Created by Wowember on 29.09.2015.
  */
+
 public abstract class Function2<A, B, R> {
 
     public abstract R apply(A x, B y);
