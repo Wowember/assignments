@@ -39,17 +39,10 @@ public abstract class Collections{
     }
 
     public static <A> Iterable<A> takeUnless(final Predicate<A> p, final Iterable<A> a) {
-        List<A> list = new ArrayList<>();
-        for (A el: a) {
-            if (p.apply(el)) {
-                break;
-            }
-            list.add(el);
-        }
-        return list;
+        return takeWhile(p.not(), a);
     }
 
-    public static <A, B> B foldr(final Function2<A, B, B> f, B start, final Iterable<A> a) {
+    public static <A, B> B foldr(final Function2<A, B, B> f, final Iterable<A> a, B start) {
         List<A> list = new ArrayList<>();
         for (A el: a) {
             list.add(el);
@@ -59,9 +52,9 @@ public abstract class Collections{
         return start;
     }
 
-    public static <A, B> B foldl(final Function2<A, B, B> f, B start, final Iterable<A> a) {
+    public static <A, B> B foldl(final Function2<B, A, B> f, final Iterable<A> a, B start) {
         for (A el: a) {
-            start = f.apply(el, start);
+            start = f.apply(start, el);
         }
         return start;
     }
