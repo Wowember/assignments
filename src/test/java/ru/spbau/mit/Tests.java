@@ -140,7 +140,14 @@ public class Tests {
         assertTrue(2 == lessThanSixList.size());
         for (Integer el: lessThanSixList) assertTrue(el < 6);
 
+        List<Integer> notLessThanSixList = (List<Integer>) Collections.filter(lessThanSix.not(), list);
+        assertTrue(3 == notLessThanSixList.size());
+        for (Integer el: notLessThanSixList) assertTrue(el >= 6);
+
         List<Integer> lessThanSixTakeWhile = (List<Integer>) Collections.takeWhile(lessThanSix, list);
+        assertTrue(2 == lessThanSixList.size());
+
+        List<Integer> lessThanSixTakeUnless = (List<Integer>) Collections.takeWhile(lessThanSix.not(), list);
         assertTrue(2 == lessThanSixList.size());
 
         assertEquals(7, (int) Collections.foldr(minusFunc, list, 0));
