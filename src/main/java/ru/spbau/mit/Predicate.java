@@ -5,20 +5,20 @@ package ru.spbau.mit;
  */
 public abstract class Predicate<A> extends Function1<A, Boolean> {
 
-    public Predicate<A> or(final Function1<A, Boolean> f) {
+    public Predicate<A> or(final Predicate<A> pr) {
         return new Predicate<A>() {
             @Override
             public Boolean apply(A x) {
-                return f.apply(x) || Predicate.this.apply(x);
+                return Predicate.this.apply(x) || pr.apply(x);
             }
         };
     }
 
-    public Predicate<A> and(final Function1<A, Boolean> f) {
+    public Predicate<A> and(final Predicate<A> pr) {
         return new Predicate<A>() {
             @Override
             public Boolean apply(A x) {
-                return f.apply(x) && Predicate.this.apply(x);
+                return Predicate.this.apply(x) && pr.apply(x);
             }
         };
     }

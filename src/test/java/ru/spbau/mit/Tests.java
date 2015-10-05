@@ -91,6 +91,14 @@ public class Tests {
         }
     };
 
+    Predicate<Integer> lessThanTenFail = new Predicate<Integer>() {
+        @Override
+        public Boolean apply(Integer x) {
+            assertTrue(false);
+            return x < 10;
+        }
+    };
+
     @Test
     public void testPredicate() {
 
@@ -106,6 +114,12 @@ public class Tests {
         assertTrue(lessThanSixOrLessThanTen.apply(7));
         assertTrue(lessThanSixOrLessThanTen.apply(9));
         assertFalse(lessThanSixOrLessThanTen.apply(11));
+
+        // testing laziness "or" , "and"
+        Predicate<Integer> lessThanSixOrLessThanTenFail = lessThanSix.or(lessThanTenFail);
+        Predicate<Integer> lessThanSixAndLessThanTenFail = lessThanSix.and(lessThanTenFail);
+        assertTrue(lessThanSixOrLessThanTenFail.apply(5));
+        assertFalse(lessThanSixAndLessThanTenFail.apply(8));
 
         //testing "and"
         Predicate<Integer> lessThanSixAndLessThanTen = lessThanSix.and(lessThanTen);

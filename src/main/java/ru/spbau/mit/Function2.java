@@ -8,7 +8,7 @@ public abstract class Function2<A, B, R> {
 
     public abstract R apply(A x, B y);
 
-    public <C> Function2<A, B, C> compose(final Function1<R, C> g){
+    public <C> Function2<A, B, C> compose(final Function1<? super R, ? extends C> g){
         return new Function2<A, B, C>() {
             @Override
             public C apply(A x, B y) {
