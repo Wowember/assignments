@@ -1,16 +1,15 @@
 package ru.spbau.mit;
 
 import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.Assert.*;
+
 
 /**
  * Created by Wowember on 29.09.2015.
  */
-
-
-import static org.junit.Assert.*;
 
 public class Tests {
 
@@ -94,7 +93,7 @@ public class Tests {
     Predicate<Integer> lessThanTenFail = new Predicate<Integer>() {
         @Override
         public Boolean apply(Integer x) {
-            assertTrue(false);
+            fail();
             return x < 10;
         }
     };
@@ -158,26 +157,24 @@ public class Tests {
 
         //testing "map"
         List<Integer> doubleList = (List<Integer>) Collections.map(doublingFunc, list);
-        for (int i = 0; i < list.size(); i++) {
-            assertTrue(list.get(i) * 2 == (int) doubleList.get(i));
-        }
+        for (int i = 0; i < list.size(); i++) { assertEquals(list.get(i) * 2,(int) doubleList.get(i)); }
 
         //testing "filter"
         List<Integer> lessThanSixList = (List<Integer>) Collections.filter(lessThanSix, list);
-        assertTrue(2 == lessThanSixList.size());
+        assertEquals(2, lessThanSixList.size());
         for (Integer el: lessThanSixList) assertTrue(el < 6);
 
         List<Integer> notLessThanSixList = (List<Integer>) Collections.filter(lessThanSix.not(), list);
-        assertTrue(3 == notLessThanSixList.size());
-        for (Integer el: notLessThanSixList) assertTrue(el >= 6);
+        assertEquals(3, notLessThanSixList.size());
+        for (Integer el: notLessThanSixList) { assertTrue(el >= 6); }
 
         //testing "takeWhile"
         List<Integer> lessThanSixTakeWhile = (List<Integer>) Collections.takeWhile(lessThanSix, list);
-        assertTrue(2 == lessThanSixList.size());
+        assertEquals(2, lessThanSixList.size());
 
         //testing "takeUnless"
         List<Integer> lessThanSixTakeUnless = (List<Integer>) Collections.takeUnless(lessThanSix.not(), list);
-        assertTrue(2 == lessThanSixList.size());
+        assertEquals(2, lessThanSixList.size());
 
         //testing "foldr", "foldl"
         assertEquals(7, (int) Collections.foldr(minusFunc, list, 0));
